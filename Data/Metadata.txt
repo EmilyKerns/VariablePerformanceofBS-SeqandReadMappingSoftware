@@ -1,0 +1,36 @@
+Environment	Population	FishID	Mass	Length	Sex	Fibrosis	Batch	Exposure
+Common Garden	Sayward	001	3.22	62	M	0	1	Y
+Common Garden	Sayward	002	3.89	65	F	0	1	Y
+Common Garden	Roberts	001	2.17	52.60	F	0	1	Y
+Common Garden	Roberts	002	3.55	62.8	M	0	1	Y
+Common Garden	Gosling	001	3.96	68.50	M	0	1	Y
+Common Garden	Gosling	002	4.69	69	F	0	1	Y
+Common Garden	Wik	001	2.913	61	M	0	1	N
+Common Garden	Wik	002	3.226	64.44	M	0	1	N
+Common Garden	Wik	003	2.571	62.46	F	0	1	N
+Common Garden	Wik	004	3.128	63.36	F	0	1	N
+Common Garden	Watson	001	0.705	42.5	M	0	1	N
+Common Garden	Watson	002	2.947	64.14	F	0	1	N
+Common Garden	Watson	003	1.755	56.22	M	0	1	N
+Common Garden	Watson	004	3.375	66	F	0	1	N
+Field	Wik	002	1.29	49.64	M	2	1	Unknown
+Field	Wik	005	0.64	40.92	Unknown	4	1	Unknown
+Field	Wik	011	1.04	47.63	M	2	1	Unknown
+Field	Wik	012	1.34	53.05	M	3	1	Unknown
+Field	Watson	004	0.47	36.94	M	0	1	Unknown
+Field	Watson	007	0.30	31.60	F	0	1	Unknown
+Field	Watson	016	0.55	36.98	F	0	1	Unknown
+Field	Watson	017	0.93	47.48	Unknown	0	1	Unknown
+Common Garden	Gosling	2210_01	4.65	72.88	M	0	2	N
+Common Garden	Gosling	35_04	4.59	76.49	F	0	2	N
+Common Garden	Roberts	003			M	0	2	N
+Common Garden	Roberts	31_01	2.17	51.88	M	0	2	N
+Common Garden	Sayward	4_01	2.15	56.49	M	0	2	N
+Common Garden	Sayward	2343_003			M	0	2	N
+Field	Gosling	027	2.58	62.39	F	0	2	Unknown
+Field	Gosling	028	.984	46.51	M	0	2	Unknown
+Field	Gosling	033	1.228	50.45	F	0	2	Unknown
+Field	Roberts	98	.579	37.99	M	0	2	Unknown
+Field	Roberts	102	.919	43.4	F	0	2	Unknown
+Field	Roberts	106	.524	38.13	M	0	2	Unknown
+
