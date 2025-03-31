@@ -25,7 +25,6 @@ ggplot(data = PercMethyl, aes(x = bwameth.mean, y = bismark.mean)) +
   theme_cowplot() +
   stat_poly_line() +
   stat_poly_eq(use_label("eq")) +
-  stat_poly_eq(label.y = 0.9) +
   geom_point()
 
 ggplot(data = PercMethyl, aes(x = bwameth.mean, y = bwamem.mean)) +
@@ -33,7 +32,6 @@ ggplot(data = PercMethyl, aes(x = bwameth.mean, y = bwamem.mean)) +
   theme_cowplot() +
   stat_poly_line() +
   stat_poly_eq(use_label("eq")) +
-  stat_poly_eq(label.y = 0.9) +
   geom_point()
 
 ggplot(data = PercMethyl, aes(x = bismark.mean, y = bwamem.mean)) +
@@ -41,40 +39,15 @@ ggplot(data = PercMethyl, aes(x = bismark.mean, y = bwamem.mean)) +
   theme_cowplot() +
   stat_poly_line() +
   stat_poly_eq(use_label("eq")) +
-  stat_poly_eq(label.y = 0.9) +
   geom_point()
 
 ## Model - should be the same as the model in the figures
 
 bismark.bwameth.mean <- glm(bismark.mean ~ bwameth.mean, data = PercMethyl)
 summary(bismark.bwameth.mean)
-# Calculate R-squared
-deviance <- summary(bismark.bwameth.mean)$deviance
-null_deviance <- summary(bismark.bwameth.mean)$null.deviance
-rsquared <- 1 - (deviance / null_deviance)
-
-# Print the R-squared value
-print(rsquared)
-# 0.9686299
 
 bwamem.bwameth.mean <- glm(bwamem.mean ~ bwameth.mean, data = PercMethyl)
 summary(bwamem.bwameth.mean)
-# Calculate R-squared
-deviance <- summary(bwamem.bwameth.mean)$deviance
-null_deviance <- summary(bwamem.bwameth.mean)$null.deviance
-rsquared <- 1 - (deviance / null_deviance)
-
-# Print the R-squared value
-print(rsquared)
-# 0.6659768
 
 bwamem.bismark.mean <- glm(bwamem.mean ~ bismark.mean, data = PercMethyl)
 summary(bwamem.bismark.mean)
-# Calculate R-squared
-deviance <- summary(bwamem.bismark.mean)$deviance
-null_deviance <- summary(bwamem.bismark.mean)$null.deviance
-rsquared <- 1 - (deviance / null_deviance)
-
-# Print the R-squared value
-print(rsquared)
-# 0.6260214

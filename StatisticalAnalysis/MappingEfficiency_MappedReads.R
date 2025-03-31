@@ -6,17 +6,17 @@ library(readxl)
 library(tidyverse)
 library(ggplot2)
 library(car)
-library(FSA)
-library(ggstatsplot)
 library(ggpubr)
 library(dplyr)
 library(cowplot)
+library(coin)
+library(rstatix)
 
 
-MappingEfficiency <- read_excel("QCStats_1.xlsx", sheet = "BamtoolsStats")
+MappingEfficiency <- read_excel("R:/Genohub_seq/methylation_methods_comparison/Metadata/QC/QCStats_1.xlsx", sheet = "BamtoolsStats")
 
 dat <- MappingEfficiency %>% 
-  select("AlignmentMethod", "PercentMapped", "Batch", "Population", "Environment")
+  select("AlignmentMethod", "PercentMapped", "Batch", "Population", "Environment","SampleID")
 
 dat <- na.omit(dat)
 
@@ -45,208 +45,93 @@ ggplot(dat) +
 
 ####### Test for differences between read mapping methods
 
-
-# ANOVA
-ANOVA <- aov(PercentMapped ~ AlignmentMethod,
-    data = dat
-)
-ANOVA
-
-# Call:
-#   aov(formula = PercentMapped ~ AlignmentMethod, data = dat)
-# 
-# Terms:
-#   AlignmentMethod Residuals
-# Sum of Squares         5.140212  0.128049
-# Deg. of Freedom               2        99
-# 
-# Residual standard error: 0.03596426
-# Estimated effects may be unbalanced
-
-# QQ plot
-qqPlot(ANOVA$residuals,
-       id = FALSE # id = FALSE to remove point identification
-)
+shapiro.test(dat$PercentMapped)
+#W = 0.73905, p-value = 3.57e-12
 
 # histogram
-hist(ANOVA$residuals)
+hist(dat$PercentMapped)
 
-# Shapiro-Wilk normality test
-shapiro.test(ANOVA$residuals)
-# Shapiro-Wilk normality test
-# 
-# data:  ANOVA$residuals
-# W = 0.94372, p-value = 0.0002821
+#### Does not meet assumption of normality, using Friedman Test
 
-#### Does not meet assumption of normality, moving to Kruskal Wallis rank sum test
+res.fried <- friedman_test(dat, PercentMapped ~ AlignmentMethod |SampleID)
+res.fried
+#    .y.               n      statistic    df        p          method       
+#   1 PercentMapped    34      60.9         2       5.85e-14  Friedman test
 
-## Kruskal Wallis Test
-kruskal.test(PercentMapped ~ AlignmentMethod,
-             data = dat
-)
+dat %>% friedman_effsize(PercentMapped ~ AlignmentMethod |SampleID)
+#     .y.               n   effsize method      magnitude
+#   1 PercentMapped    34   0.896   Kendall W     large 
 
-# Kruskal-Wallis rank sum test
-# 
-# data:  PercentMapped by AlignmentMethod
-# Kruskal-Wallis chi-squared = 75.952, df = 2, p-value < 2.2e-16
+# pairwise comparisons
+pwc <- dat %>%
+  wilcox_test(PercentMapped ~ AlignmentMethod, paired = TRUE, p.adjust.method = "bonferroni")
+pwc
+# .y.           group1  group2      n1    n   statistic    p          p.adj    p.adj.signif
+# PercentMapped Bismark bwa mem     34    34   548      2.5 e- 6    7.5 e- 6      ****        
+# PercentMapped Bismark bwa meth    34    34   0        1.16e-10    3.48e-10      ****        
+# PercentMapped bwa mem bwa meth    34    34   0        1.16e-10    3.48e-10      ****     
 
-# post hoc test
-dunnTest(PercentMapped ~ AlignmentMethod,
-         data = dat,
-         method = "holm"
-)
-# Dunn (1964) Kruskal-Wallis multiple comparison
-# p-values adjusted with the Holm method.
-# 
-#       Comparison         Z      P.unadj        P.adj
-# 1 Bismark - bwa mem  2.934500 3.340851e-03 3.340851e-03
-# 2 Bismark - bwa meth -5.639487 1.705577e-08 3.411154e-08
-# 3 bwa mem - bwa meth -8.573987 9.996252e-18 2.998876e-17
-# Warning message:
-#   AlignmentMethod was coerced to a factor. 
+dat %>% wilcox_effsize(PercentMapped ~ AlignmentMethod, paired = TRUE)
+# .y.             group1  group2   effsize    n1    n2 magnitude
+# 1 PercentMapped Bismark bwa mem    0.734    34    34 large    
+# 2 PercentMapped Bismark bwa meth   0.872    34    34 large    
+# 3 PercentMapped bwa mem bwa meth   0.872    34    34 large
 
+######### Make a nice plot displaying significant differences between treatments
 
-######### Make a nice plot displaying p value
-
-
-dat$Batch <- as.character(dat$Batch)
-
-p <- ggboxplot(dat, x = "AlignmentMethod", y = "PercentMapped",
-          color = "Batch", palette = "jco", xlab = "Alignment Method", ylab = "Mapping Efficiency", add = "jitter")+
-  theme(text=element_text(size=14))+
-  stat_compare_means(method = "kruskal.test") # Pairwise comparison against all
- 
-ggpar(p, ylim = c(0,1.1))
-   
-Figure <- ggboxplot(dat, x = "AlignmentMethod", y = "PercentMapped",
-  color = "AlignmentMethod", palette = "jco", xlab = "Alignment Method", ylab = "Mapping Efficiency", add = "jitter")+
-  theme(text=element_text(size=14), legend.position = "none")+
-  stat_compare_means(method = "kruskal.test") # Pairwise comparison against all
-   
-ggpar(Figure, ylim = c(0,1.1))
-   
-q <- ggscatter(dat, x = "AlignmentMethod", y = "PercentMapped",
-          color = as.character("Batch"), palette = "jco")+
-  stat_compare_means(method = "kruskal.test")+      # Add global p-value
-  stat_compare_means(label = "p.signif", method = "t.test",
-                     ref.group = ".all.")+   # Pairwise comparison against all
-  aes(xlab = "Alignment Method", ylab = "Mapping Efficiency")
-
-q
+# Visualization: box plots with p-values
+pwc <- pwc %>% add_xy_position(x = "AlignmentMethod")
+ggboxplot(dat, x = "AlignmentMethod", y = "PercentMapped", add = "point") +
+  stat_pvalue_manual(pwc, hide.ns = TRUE) +
+  labs(x = "Alignment Method", y = "Mapping Efficiency"
+    )
+pwc
 
 ####### Mean and SD of mapping efficiency
 
-# bwa meth
-bwameth <- MappingEfficiency %>%
-  select(AlignmentMethod, PercentMapped, Batch) %>% 
-  filter(AlignmentMethod == "bwa meth")
+by_group <- group_by(dat, AlignmentMethod)
 
-mean(bwameth$PercentMapped) 
-# 0.9923139
-sd(bwameth$PercentMapped)
-# 0.0018085
-sd(bwameth$PercentMapped)/sqrt(length((bwameth))) #standard error
-# 0.001044138
+by_group %>% summarise_each_(funs(mean(., na.rm = TRUE), sd(., na.rm=TRUE)), names(by_group)[2])
+# AlignmentMethod  mean   sd
+# Bismark         0.544 0.0435 
+# bwa mem         0.493 0.0446 
+# bwa meth        0.992 0.00181
 
-
-# Bismark
+# Bismark batch 1 & batch 2
 Bismark <- MappingEfficiency %>%
   select(AlignmentMethod, PercentMapped, Batch) %>% 
   filter(AlignmentMethod == "Bismark")
 
-mean(Bismark$PercentMapped)
-# 0.5437647
-sd(Bismark$PercentMapped)
-# 0.04348114
-sd(Bismark$PercentMapped)/sqrt(length((Bismark))) #standard error
-# 0.02510385
+by_group <- group_by(Bismark, Batch)
 
-# bwa mem
-bwamem <- MappingEfficiency %>%
+by_group %>% summarise_each_(funs(mean(., na.rm = TRUE), sd(., na.rm=TRUE)), names(by_group)[2])
+# Batch  mean     sd
+# 1     0.545 0.0447
+# 2     0.542 0.0431
+
+# bwa meth batch 1 & batch 2
+BwaMeth <- MappingEfficiency %>%
+  select(AlignmentMethod, PercentMapped, Batch) %>% 
+  filter(AlignmentMethod == "bwa meth")
+
+by_group <- group_by(BwaMeth, Batch)
+
+by_group %>% summarise_each_(funs(mean(., na.rm = TRUE), sd(., na.rm=TRUE)), names(by_group)[2])
+# Batch  mean       sd
+# 1     0.993   0.000864
+# 2     0.990   0.00127
+
+# bwa mem batch 1 & batch 2
+BwaMem <- MappingEfficiency %>%
   select(AlignmentMethod, PercentMapped, Batch) %>% 
   filter(AlignmentMethod == "bwa mem")
 
-mean(bwamem$PercentMapped)
-# 0.492582
-sd(bwamem$PercentMapped)
-# 0.0445691
-sd(bwamem$PercentMapped)/sqrt(length((bwamem))) #standard error
-# 0.02573198
+by_group <- group_by(BwaMem, Batch)
 
-# Bismark batch 1 & batch 2
-Bismark_1 <- MappingEfficiency %>%
-  select(AlignmentMethod, PercentMapped, Batch) %>% 
-  filter(AlignmentMethod == "Bismark") %>% 
-  filter(Batch == "1")
-
-mean(Bismark_1$PercentMapped)
-# 0.5448636
-sd(Bismark_1$PercentMapped)
-# 0.04466307
-sd(Bismark_1$PercentMapped)/sqrt(length((Bismark_1))) #standard error
-# 0.02578624
-
-Bismark_2 <- MappingEfficiency %>%
-  select(AlignmentMethod, PercentMapped, Batch) %>% 
-  filter(AlignmentMethod == "Bismark") %>% 
-  filter(Batch == "2")
-
-mean(Bismark_2$PercentMapped)
-# 0.54175
-sd(Bismark_2$PercentMapped)
-# 0.04309002
-sd(Bismark_2$PercentMapped)/sqrt(length((Bismark_2))) #standard error
-# 0.02487804
-
-# bwa meth batch 1 & batch 2
-BwaMeth_1 <- MappingEfficiency %>%
-  select(AlignmentMethod, PercentMapped, Batch) %>% 
-  filter(AlignmentMethod == "bwa meth") %>% 
-  filter(Batch == "1")
-
-mean(BwaMeth_1$PercentMapped)
-# 0.9934065
-sd(BwaMeth_1$PercentMapped)
-# 0.0008636809
-sd(BwaMeth_1$PercentMapped)/sqrt(length((BwaMeth_1))) #standard error
-# 0.0004986464
-
-BwaMeth_2 <- MappingEfficiency %>%
-  select(AlignmentMethod, PercentMapped, Batch) %>% 
-  filter(AlignmentMethod == "bwa meth") %>% 
-  filter(Batch == "2")
-
-mean(BwaMeth_2$PercentMapped)
-# 0.990311
-sd(BwaMeth_2$PercentMapped)
-# 0.001274477
-sd(BwaMeth_2$PercentMapped)/sqrt(length((BwaMeth_2))) #standard error
-# 0.0007358194
-
-# bwa mem batch 1 & batch 2
-BwaMem_1 <- MappingEfficiency %>%
-  select(AlignmentMethod, PercentMapped, Batch) %>% 
-  filter(AlignmentMethod == "bwa mem") %>% 
-  filter(Batch == "1")
-
-mean(BwaMem_1$PercentMapped)
-# 0.5172608
-sd(BwaMem_1$PercentMapped)
-# 0.03007624
-sd(BwaMem_1$PercentMapped)/sqrt(length((BwaMem_1))) #standard error
-# 0.01736452
-
-BwaMem_2 <- MappingEfficiency %>%
-  select(AlignmentMethod, PercentMapped, Batch) %>% 
-  filter(AlignmentMethod == "bwa mem") %>% 
-  filter(Batch == "2")
-
-mean(BwaMem_2$PercentMapped)
-# 0.4473376
-sd(BwaMem_2$PercentMapped)
-# 0.02794727
-sd(BwaMem_2$PercentMapped)/sqrt(length((BwaMem_2))) #standard error
-# 0.01613537
+by_group %>% summarise_each_(funs(mean(., na.rm = TRUE), sd(., na.rm=TRUE)), names(by_group)[2])
+# Batch  mean     sd
+#   1   0.517   0.0301
+# 2     0.447   0.0279
 
 ###### Test for batch effects on mapping efficiency using each mapping tool
 
@@ -287,12 +172,12 @@ ggplot(Bismark) +
 
 ### BWA meth
 # Shapiro-Wilk normality test
-shapiro.test(bwameth$PercentMapped)
+shapiro.test(BwaMeth$PercentMapped)
 # data:  bwameth$PercentMapped
 # W = 0.9292, p-value = 0.02965 - p<0.05, data not normally distributed, may need to use a nonparametric test
 
 # Wilcoxon rank sum exact test
-wilcox.test(PercentMapped~Batch, data = bwameth) 
+wilcox.test(PercentMapped~Batch, data = BwaMeth) 
 # data:  PercentMapped by Batch
 # W = 261, p-value = 2.553e-08
 # alternative hypothesis: true location shift is not equal to 0
@@ -300,13 +185,13 @@ wilcox.test(PercentMapped~Batch, data = bwameth)
 
 BWAMeth.wilcox.test <- compare_means(
   PercentMapped ~ Batch,
-  data = bwameth,
+  data = BwaMeth,
   method = "wilcox.test"
 )
 
-bwameth$Batch <- as.factor(bwameth$Batch)
+BwaMeth$Batch <- as.factor(BwaMeth$Batch)
 
-ggplot(bwameth) +
+ggplot(BwaMeth) +
   geom_boxplot(aes(x = Batch, y = PercentMapped, fill = Batch)) +
   labs(title = "BWA Meth", x = "Sequencing Batch", y = "Mapping Efficiency") +
   stat_pvalue_manual(BWAMeth.wilcox.test, label = "p", y.position = 1.0, step.increase = 0.001) +
@@ -315,23 +200,23 @@ ggplot(bwameth) +
 
 ### BWA mem
 # Shapiro-Wilk normality test
-shapiro.test(bwamem$PercentMapped)
-# data:  bwamem$PercentMapped
+shapiro.test(BwaMem$PercentMapped)
+# data:  BwaMem$PercentMapped
 # W = 0.95749, p-value = 0.2052 - p>0.05, data normally distributed, but will use Wilcox test for consistency
 
 # Wilcox test
-wilcox.test(PercentMapped~Batch, data = bwamem) 
-
+wilcox.test(PercentMapped~Batch, data = BwaMem) 
+# W = 253, p-value = 7.112e-07
 
 BWAMem.wilcox.test <- compare_means(
   PercentMapped ~ Batch,
-  data = bwamem,
+  data = BwaMem,
   method = "wilcox.test"
 )
 
-bwamem$Batch <- as.factor(bwamem$Batch)
+BwaMem$Batch <- as.factor(BwaMem$Batch)
 
-ggplot(bwamem) +
+ggplot(BwaMem) +
   geom_boxplot(aes(x = Batch, y = PercentMapped, fill = Batch)) +
   labs(title = "BWA Mem", x = "Sequencing Batch", y = "Mapping Efficiency") +
   stat_pvalue_manual(BWAMem.wilcox.test, label = "p", y.position = 0.7, step.increase = 0.001) +
@@ -344,195 +229,107 @@ ggplot(bwamem) +
 ####### Test for differences between read mapping methods
 
 dat2 <- MappingEfficiency %>% 
-  select("AlignmentMethod", "MappedReads", "Batch", "Population", "Environment")
+  select("AlignmentMethod", "MappedReads", "Batch", "Population", "Environment", "SampleID")
 
-# ANOVA
-ANOVA <- aov(MappedReads ~ AlignmentMethod,
-             data = dat2
-)
-ANOVA
-# Call:
-#   aov(formula = MappedReads ~ AlignmentMethod, data = dat2)
-# 
-# Terms:
-# AlignmentMethod    Residuals
-# Sum of Squares     3.006416e+15 7.667711e+15
-# Deg. of Freedom               2           99
-# 
-# Residual standard error: 8800661
-# Estimated effects may be unbalanced
+dat2 <- na.omit(dat2)
 
-# QQ plot
-qqPlot(ANOVA$residuals,
-       id = FALSE # id = FALSE to remove point identification
-)
+shapiro.test(as.numeric(dat2$MappedReads))
+#W = 0.68734, p-value = 1.989e-13
 
 # histogram
-hist(ANOVA$residuals)
+hist(as.numeric(dat2$MappedReads))
 
-# Shapiro-Wilk normality test
-shapiro.test(ANOVA$residuals)
-# data:  ANOVA$residuals
-# W = 0.71788, p-value = 1.047e-12
+#### Does not meet assumption of normality, using Friedman Test
 
-#### Does not meet assumption of normality, moving to Kruskal Wallis rank sum test
+dat2$MappedReads <- as.numeric(dat2$MappedReads)
 
-## Kruskal-Wallis rank sum test
-kruskal.test(MappedReads ~ AlignmentMethod,
-             data = dat2
-)
-# data:  MappedReads by AlignmentMethod
-# Kruskal-Wallis chi-squared = 50.388, df = 2, p-value = 1.144e-11
+res.fried <- dat2 %>% friedman_test(MappedReads ~ AlignmentMethod |SampleID)
+res.fried
+#    .y.               n      statistic    df        p          method       
+#    MappedReads    34        68            2      1.71e-15     Friedman test
 
-# post hoc test
-dunnTest(MappedReads ~ AlignmentMethod,
-         data = dat2,
-         method = "holm"
-)
-# Dunn (1964) Kruskal-Wallis multiple comparison
-# p-values adjusted with the Holm method.
-# 
-#   Comparison                Z      P.unadj        P.adj
-# 1 Bismark - bwa mem -3.250055 1.153829e-03 1.153829e-03
-# 2 Bismark - bwa meth -7.090283 1.338380e-12 4.015140e-12
-# 3 bwa mem - bwa meth -3.840228 1.229199e-04 2.458398e-04
-# Warning message:
-#   AlignmentMethod was coerced to a factor. 
+dat2 %>% friedman_effsize(MappedReads ~ AlignmentMethod |SampleID)
+#     .y.               n   effsize method      magnitude
+#   MappedReads         34       1  Kendall W     large  
+
+# pairwise comparisons
+pwc <- dat2 %>%
+  wilcox_test(MappedReads ~ AlignmentMethod, paired = TRUE, p.adjust.method = "bonferroni")
+pwc
+# .y.           group1    group2      n1    n   statistic    p       p.adj    p.adj.signif
+#   MappedReads Bismark   bwa mem     34    34         0  1.16e-10  3.48e-10  ****        
+#   MappedReads Bismark   bwa meth    34    34         0  1.16e-10  3.48e-10  ****        
+#   MappedReads bwa mem   bwa meth    34    34         0  1.16e-10  3.48e-10  ****     
 
 
-######### Make a nice plot displaying p value
+######### Make a nice plot displaying significant differences between treatments
 
-
-# Visualize: Specify the comparisons you want
-# my_comparisons <- list( c("Bismark", "bwa mem"), c("Bismark", "bwa meth"), c("bwa mem", "bwa meth") )
-
-dat2$Batch <- as.character(dat2$Batch)
-
-r <- ggboxplot(dat2, x = "AlignmentMethod", y = "MappedReads",
-               color = "Batch", palette = "jco", xlab = "Alignment Method", ylab = "Mapped Reads", add = "jitter")+
-  theme(text=element_text(size=14))+
-  #stat_compare_means(comparisons = my_comparisons)+ #Add pairwise comparisons p-value
-  stat_compare_means(method = "kruskal.test") # Pairwise comparison against all
-
-ggpar(r, ylim = c(0,70000000))
-
-Figure <- ggboxplot(dat2, x = "AlignmentMethod", y = "MappedReads",
-                    color = "AlignmentMethod", palette = "jco", xlab = "Alignment Method", ylab = "Mapped Reads", add = "jitter")+
-  theme(text=element_text(size=14), legend.position = "none")+
-  #stat_compare_means(comparisons = my_comparisons)+ #Add pairwise comparisons p-value
-  stat_compare_means(method = "kruskal.test") # Pairwise comparison against all
-
-ggpar(Figure, ylim = c(0, 70000000))
+# Visualization: box plots with p-values
+pwc <- pwc %>% add_xy_position(x = "AlignmentMethod")
+ggboxplot(dat2, x = "AlignmentMethod", y = "MappedReads", add = "point") +
+  stat_pvalue_manual(pwc, hide.ns = TRUE) +
+  labs(x = "Alignment Method", y = "Mapped Reads"
+  )
+pwc
 
 
 ##### Mean & SD of Mapped Reads
 
+by_group <- group_by(dat2, AlignmentMethod)
 
-# bwa meth
-bwameth_mappedreads <- MappingEfficiency %>%
-  select(AlignmentMethod, MappedReads, Batch) %>% 
-  filter(AlignmentMethod == "bwa meth")
+by_group %>% summarise_each_(funs(mean(., na.rm = TRUE), sd(., na.rm=TRUE)), names(by_group)[2])
+# AlignmentMethod    mean        sd
+# Bismark          4875224.  3741376.
+# bwa mem          8586430.  6110385.
+# bwa meth        17790041. 13454374.
 
-mean(bwameth_mappedreads$MappedReads)
-# 17,790,041
-sd(bwameth_mappedreads$MappedReads)
-# 13,454,374
-
-#bwa mem
-bwamem_mappedreads <- MappingEfficiency %>%
-  select(AlignmentMethod, MappedReads, Batch) %>% 
-  filter(AlignmentMethod == "bwa mem")
-
-mean(bwamem_mappedreads$MappedReads)
-# 8,586,430
-sd(bwamem_mappedreads$MappedReads)
-# 6,110,385
-
-# Bismark
-Bismark_mappedreads <- MappingEfficiency %>%
+# Bismark batch 1 & 2
+Bismark_reads <- dat2 %>%
   select(AlignmentMethod, MappedReads, Batch) %>% 
   filter(AlignmentMethod == "Bismark")
 
-mean(Bismark_mappedreads$MappedReads)
-# 4,875,224
-sd(Bismark_mappedreads$MappedReads)
-# 3,741,376
+by_group <- group_by(Bismark_reads, Batch)
 
-# Bismark batch 1 & 2
-Bismark_1_reads <- MappingEfficiency %>%
-  select(AlignmentMethod, MappedReads, Batch) %>% 
-  filter(AlignmentMethod == "Bismark") %>% 
-  filter(Batch == "1")
-  
-mean(Bismark_1_reads$MappedReads)
-# 1,450,314
-sd(Bismark_1_reads$MappedReads)
-# 196,475.8
-  
-Bismark_2_reads <- MappingEfficiency %>%
-    select(AlignmentMethod, MappedReads, Batch) %>% 
-    filter(AlignmentMethod == "Bismark") %>% 
-    filter(Batch == "2")
-
-mean(Bismark_2_reads$MappedReads)
-# 2,855,790
-sd(Bismark_2_reads$MappedReads)
-# 4,301,236
+by_group %>% summarise_each_(funs(mean(., na.rm = TRUE), sd(., na.rm=TRUE)), names(by_group)[2])
+# Batch   mean       sd
+#   1   2855790.  448334.
+# 2     8577520. 4301236.
 
 # bwa meth batch 1 & 2
-BwaMeth_1_reads <- MappingEfficiency %>%
+BwaMeth_reads <- dat2 %>%
   select(AlignmentMethod, MappedReads, Batch) %>% 
-  filter(AlignmentMethod == "bwa meth") %>% 
-  filter(Batch == "1")
+  filter(AlignmentMethod == "bwa meth")
 
-mean(BwaMeth_1_reads$MappedReads)
-# 10,428,487
-sd(BwaMeth_1_reads$MappedReads)
-# 1,268,689
+by_group <- group_by(BwaMeth_reads, Batch)
 
-BwaMeth_2_reads <- MappingEfficiency %>%
-  select(AlignmentMethod, MappedReads, Batch) %>% 
-  filter(AlignmentMethod == "bwa meth") %>% 
-  filter(Batch == "2")
-
-mean(BwaMeth_2_reads $MappedReads)
-# 31,286,224
-sd(BwaMeth_2_reads $MappedReads)
-# 15,260,964
+by_group %>% summarise_each_(funs(mean(., na.rm = TRUE), sd(., na.rm=TRUE)), names(by_group)[2])
+# Batch   mean        sd
+#   1   10428487.  1268689.
+# 2     31286224. 15260964.
 
 # bwa mem batch 1 & 2
-BwaMem_1_reads <- MappingEfficiency %>%
+BwaMem_reads <- dat2 %>%
   select(AlignmentMethod, MappedReads, Batch) %>% 
-  filter(AlignmentMethod == "bwa mem") %>% 
-  filter(Batch == "1")
+  filter(AlignmentMethod == "bwa mem")
 
-mean(BwaMem_1_reads$MappedReads)
-# 5,443,143
-sd(BwaMem_1_reads$MappedReads)
-# 844,552.3
+by_group <- group_by(BwaMem_reads, Batch)
 
-BwaMem_2_reads <- MappingEfficiency %>%
-  select(AlignmentMethod, MappedReads, Batch) %>% 
-  filter(AlignmentMethod == "bwa mem") %>% 
-  filter(Batch == "2")
-
-mean(BwaMem_2_reads$MappedReads)
-# 14,349,123
-sd(BwaMem_2_reads$MappedReads)
-# 7,393,282
+by_group %>% summarise_each_(funs(mean(., na.rm = TRUE), sd(., na.rm=TRUE)), names(by_group)[2])
+# Batch   mean       sd
+#   1   5443143.  844552.
+# 2     14349122. 7393282.
 
 ###### Test for batch effects on mapped reads using each mapping tool
-
 
 ### Bismark
 
 # Shapiro-Wilk normality test
-shapiro.test(Bismark_mappedreads$MappedReads)
+shapiro.test(Bismark_reads$MappedReads)
 # data:  Bismark_mappedreads$MappedReads
 # W = 0.68505, p-value = 2.926e-07 - p<0.05, need to use non parametric test
 
 # Wilcoxon rank sum exact test
-Bismark.wilcox <- wilcox.test(MappedReads ~ Batch, data = Bismark_mappedreads)
+Bismark.wilcox <- wilcox.test(MappedReads ~ Batch, data = Bismark_reads)
 Bismark.wilcox
 # data:  MappedReads by Batch
 # W = 0, p-value = 3.647e-09
@@ -540,13 +337,13 @@ Bismark.wilcox
 
 Bismark.wilcox.test <- compare_means(
   MappedReads ~ Batch,
-  data = Bismark_mappedreads,
+  data = Bismark_reads,
   method = "wilcox.test"
 )
 
-Bismark_mappedreads$Batch <- as.factor(Bismark_mappedreads$Batch)
+Bismark_reads$Batch <- as.factor(Bismark_reads$Batch)
 
-ggplot(Bismark_mappedreads) +
+ggplot(Bismark_reads) +
   geom_boxplot(aes(x = Batch, y = MappedReads, fill = Batch)) +
   labs(title = "Bismark", x = "Sequencing Batch", y = "Mapped Reads") +
   stat_pvalue_manual(Bismark.wilcox.test, label = "p", y.position = 20000000, step.increase = 0.2) +
@@ -556,12 +353,12 @@ ggplot(Bismark_mappedreads) +
 
 ### BWA meth
 # Shapiro-Wilk normality test
-shapiro.test(bwameth_mappedreads$MappedReads)
-# data:  bwameth_mappedreads$MappedReads
+shapiro.test(BwaMeth_reads$MappedReads)
+# data:  BwaMeth_reads$MappedReads
 # W = 0.67436, p-value = 2.036e-07 - p<0.05, need to use non parametric test
 
 # Wilcoxon rank sum exact test
-bwameth.wilcox.reads <- wilcox.test(MappedReads ~ Batch, data = bwameth_mappedreads)
+bwameth.wilcox.reads <- wilcox.test(MappedReads ~ Batch, data = BwaMeth_reads)
 bwameth.wilcox.reads
 # data:  MappedReads by Batch
 # W = 0, p-value = 3.647e-09
@@ -569,13 +366,13 @@ bwameth.wilcox.reads
 
 bwameth.wilcox.reads <- compare_means(
   MappedReads ~ Batch,
-  data = bwameth_mappedreads,
+  data = BwaMeth_reads,
   method = "wilcox.test"
 )
 
-bwameth_mappedreads$Batch <- as.factor(bwameth_mappedreads$Batch)
+BwaMeth_reads$Batch <- as.factor(BwaMeth_reads$Batch)
 
-ggplot(bwameth_mappedreads) +
+ggplot(BwaMeth_reads) +
   geom_boxplot(aes(x = Batch, y = MappedReads, fill = Batch)) +
   labs(title = "BWA meth", x = "Sequencing Batch", y = "Mapped Reads") +
   stat_pvalue_manual(bwameth.wilcox.reads, label = "p", y.position = 75000000, step.increase = 0.2) +
@@ -584,12 +381,12 @@ ggplot(bwameth_mappedreads) +
 
 ### BWA mem
 # Shapiro-Wilk normality test
-shapiro.test(bwamem_mappedreads$MappedReads)
-# data:  bwamem_mappedreads$MappedReads
+shapiro.test(BwaMem_reads$MappedReads)
+# data:  BwaMem_reads$MappedReads
 # W = 0.66366, p-value = 1.426e-07 - p<0.05, need to use non parametric test
 
 # Wilcoxon rank sum exact test
-bwamem.wilcox.reads <- wilcox.test(MappedReads ~ Batch, data = bwamem_mappedreads)
+bwamem.wilcox.reads <- wilcox.test(MappedReads ~ Batch, data = BwaMem_reads)
 bwamem.wilcox.reads
 # data:  MappedReads by Batch
 # W = 2, p-value = 1.459e-08
@@ -597,13 +394,13 @@ bwamem.wilcox.reads
 
 bwamem.wilcox.reads <- compare_means(
   MappedReads ~ Batch,
-  data = bwamem_mappedreads,
+  data = BwaMem_reads,
   method = "wilcox.test"
 )
 
-bwamem_mappedreads$Batch <- as.factor(bwamem_mappedreads$Batch)
+BwaMem_reads$Batch <- as.factor(BwaMem_reads$Batch)
 
-ggplot(bwamem_mappedreads) +
+ggplot(BwaMem_reads) +
   geom_boxplot(aes(x = Batch, y = MappedReads, fill = Batch)) +
   labs(title = "BWA mem", x = "Sequencing Batch", y = "Mapped Reads") +
   stat_pvalue_manual(bwamem.wilcox.reads, label = "p", y.position = 36000000, step.increase = 0.2) +
@@ -615,7 +412,7 @@ ggplot(bwamem_mappedreads) +
 ################ WGBS ############################
 ##################################################
 
-MappingEfficiency <- read_excel("QCStats_1.xlsx", sheet = "WBGSBamtoolsStats")
+MappingEfficiency <- read_excel("R:/Genohub_seq/methylation_methods_comparison/Metadata/QC/QCStats_1.xlsx", sheet = "WBGSBamtoolsStats")
 
 dat <- MappingEfficiency %>%
   select("Alignment Method", "PercentMapped", "Population")
@@ -635,62 +432,36 @@ ggplot(dat) +
   geom_jitter() +
   theme(legend.position = "none")
 
-ggplot(dat) +
-  aes(x = "Alignment Method", y = "PercentMapped", color = "Alignment Method") +
-  geom_boxplot() +
-  theme(legend.position = "none")
+ggboxplot(dat, x = "AlignmentMethod", y = "PercentMapped", add = "point") +
+  labs(x = "Alignment Method", y = "Mapping Efficiency"
+  )
 
 ####### Too few WGBS samples to do statistical tests, just report mean and SD 
 
-bwameth <- MappingEfficiency %>%
-  select(AlignmentMethod, PercentMapped) %>% 
-  filter(AlignmentMethod == "bwa meth")
+by_group <- group_by(dat, `Alignment Method`)
 
-mean(bwameth$PercentMapped) 
-# 0.9958422
-sd(bwameth$PercentMapped)
-# 0.001569624
-
-Bismark <- MappingEfficiency %>%
-  select(AlignmentMethod, PercentMapped) %>% 
-  filter(AlignmentMethod == "Bismark")
-
-mean(Bismark$PercentMapped)
-# 0.387
-sd(Bismark$PercentMapped)
-# 0.01235584
-
-bwamem <- MappingEfficiency %>%
-  select(AlignmentMethod, PercentMapped) %>% 
-  filter(AlignmentMethod == "bwa mem")
-
-mean(bwamem$PercentMapped)
-# 0.7464473
-sd(bwamem$PercentMapped)
-# 0.03429545
+by_group %>% summarise_each_(funs(mean(., na.rm = TRUE), sd(., na.rm=TRUE)), names(by_group)[2])
+# 
+# `Alignment Method`  mean      sd
+# <chr>              <dbl>   <dbl>
+#   1 Bismark         0.387   0.0124 
+# 2 bwa mem           0.746   0.0343 
+# 3 bwa meth          0.996   0.00157
 
 ####### Mean and SD of mapped reads
-bwameth <- MappingEfficiency %>%
-  select(AlignmentMethod, MappedReads) %>% 
-  filter(AlignmentMethod == "bwa meth")
 
-mean(bwameth$MappedReads)
-# 58,620,964
-sd(bwameth$MappedReads)
-# 1,107,988
+dat <- MappingEfficiency %>%
+  select("Alignment Method", "MappedReads", "Population")
 
-bwamem <- MappingEfficiency %>%
-  select(AlignmentMethod, MappedReads) %>% 
-  filter(AlignmentMethod == "bwa mem")
+dat <- na.omit(dat)
 
-mean(bwamem$MappedReads)
-# 44,017,088
-sd(bwamem$MappedReads)
-# 2,656,871
+dat$AlignmentMethod <- dat$`Alignment Method`
 
-Bismark <- MappingEfficiency %>%
-  select(AlignmentMethod, MappedReads) %>% 
-  filter(AlignmentMethod == "Bismark")
+by_group <- group_by(dat, `Alignment Method`)
 
-mean(Bismark$MappedReads)
-sd(Bismark$MappedReads)
+by_group %>% summarise_each_(funs(mean(., na.rm = TRUE), sd(., na.rm=TRUE)), names(by_group)[2])
+# `Alignment Method`      mean       sd
+# <chr>                  <dbl>    <dbl>
+# 1 Bismark            11321912.  502776.
+# 2 bwa mem            44017088  2656871.
+# 3 bwa meth           58620964. 1107988.
