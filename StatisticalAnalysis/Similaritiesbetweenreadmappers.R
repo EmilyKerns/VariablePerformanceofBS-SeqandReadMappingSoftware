@@ -14,7 +14,7 @@ library(cowplot)
 library(ggpmisc)
 
 
-PercMethyl <- read_excel("R:/Genohub_seq/methylation_methods_comparison/Metadata/QC/QCStats_1.xlsx", sheet = "MeanPercMeth")
+PercMethyl <- read_excel("QCStats_1.xlsx", sheet = "MeanPercMeth")
 
 PercMethyl <- PercMethyl %>%
   filter(SequencingMethod == "RRBS")

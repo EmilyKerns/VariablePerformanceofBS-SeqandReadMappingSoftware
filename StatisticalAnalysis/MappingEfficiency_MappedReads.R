@@ -13,7 +13,7 @@ library(coin)
 library(rstatix)
 
 
-MappingEfficiency <- read_excel("R:/Genohub_seq/methylation_methods_comparison/Metadata/QC/QCStats_1.xlsx", sheet = "BamtoolsStats")
+MappingEfficiency <- read_excel("QCStats_1.xlsx", sheet = "BamtoolsStats")
 
 dat <- MappingEfficiency %>% 
   select("AlignmentMethod", "PercentMapped", "Batch", "Population", "Environment","SampleID")
@@ -412,7 +412,7 @@ ggplot(BwaMem_reads) +
 ################ WGBS ############################
 ##################################################
 
-MappingEfficiency <- read_excel("R:/Genohub_seq/methylation_methods_comparison/Metadata/QC/QCStats_1.xlsx", sheet = "WBGSBamtoolsStats")
+MappingEfficiency <- read_excel("QCStats_1.xlsx", sheet = "WBGSBamtoolsStats")
 
 dat <- MappingEfficiency %>%
   select("Alignment Method", "PercentMapped", "Population")
