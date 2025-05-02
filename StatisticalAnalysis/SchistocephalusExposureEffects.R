@@ -6,7 +6,7 @@ library(magrittr)
 library(car)
 library(tidyverse)
 
-setwd('R:/Genohub_seq/methylation_methods_comparison/MethylDackel/bwameth/RRBS/methylKit/MaxVarFrac8MinDepth5')
+setwd('PATH/RRBS/methylKit/MaxVarFrac8MinDepth5')
 
 info = read.delim("R:/Genohub_seq/methylation_methods_comparison/Metadata/Metadata.txt")
 labels = read.delim("R:/Genohub_seq/methylation_methods_comparison/Metadata/Label.txt")
