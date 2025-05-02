@@ -1,1 +1,4 @@
 # VariablePerformanceofBS-SeqandReadMappingSoftware
+
+These scripts accomppany the article titled "Variable performance of widely used bisulfite sequencing methods and read mapping software for DNA methylation." (https://doi.org/10.1101/2025.03.14.643302)
+They can be used to analyze WGBS or RRBS data. First, begin by adapter trimming with Trim Galore. Then, you can use either BWA meth, BWA mem, or Bismark for read mapping. If you select Bismark, you can also use this tool to call methyaltion. If you choose a BWA-based method, use MethylDackel for methylation calls and SNP filtering. All scripts for statistical analyses are compatible with R. Raw seqeunce data is available on Dryad. 
