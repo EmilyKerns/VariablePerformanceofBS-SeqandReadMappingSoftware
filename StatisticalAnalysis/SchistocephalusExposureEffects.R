@@ -8,8 +8,8 @@ library(tidyverse)
 
 setwd('PATH/RRBS/methylKit/MaxVarFrac8MinDepth5')
 
-info = read.delim("R:/Genohub_seq/methylation_methods_comparison/Metadata/Metadata.txt")
-labels = read.delim("R:/Genohub_seq/methylation_methods_comparison/Metadata/Label.txt")
+info = read.delim("PATH/Metadata.txt")
+labels = read.delim("PATH/Label.txt")
 info <- info %>% 
   mutate("Label" = (names_from = labels))
 
