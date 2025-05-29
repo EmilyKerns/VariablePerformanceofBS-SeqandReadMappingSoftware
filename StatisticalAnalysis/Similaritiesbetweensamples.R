@@ -12,7 +12,7 @@ library(patchwork)
 library(DHARMa)
 
 
-PercMethyl <- read_excel("R:/Genohub_seq/methylation_methods_comparison/Metadata/QC/QCStats_1.xlsx", sheet = "MeanPercMeth")
+PercMethyl <- read_excel("PATH/Metadata/QC/QCStats_1.xlsx", sheet = "MeanPercMeth")
 
 PercMethyl <- PercMethyl %>%
   filter(SequencingMethod == "RRBS")
@@ -164,10 +164,10 @@ p4 <- ggplot(data = PercMethyl, aes(x = TotalSequences, y = meth.Bismark.residua
   theme_classic() +
   theme(text = element_text(size = 12), legend.position = "none", plot.margin = margin(t = 20, r = 10, b = 10, l = 10) )+
   stat_poly_line() +
-  geom_point(aes(color=Batch), size = 3)+
+  geom_point(aes(color=Batch), size = 2)+
   geom_hline(yintercept = 0, linetype = "dashed", color = "black")+
   scale_color_manual(values =c("#56B1F7","#132B43"))+
-  annotate("text", x = -Inf, y = Inf, label = "D", hjust = -0.5, vjust = 1, size = 6, fontface = "bold")
+  annotate("text", x = -Inf, y = Inf, label = "B", hjust = -0.5, vjust = 1, size = 6, fontface = "bold")
 p4
 
 q4 <- ggplot(data = PercMethyl, aes(x = TotalSequences, y = meth.Bismark.residuals)) +
@@ -176,7 +176,7 @@ q4 <- ggplot(data = PercMethyl, aes(x = TotalSequences, y = meth.Bismark.residua
   theme(text = element_text(size = 12), legend.position = "none")+
   #stat_poly_line() +
   geom_point(aes(colour = cut(TotalSequences, c(-Inf,10000000,20000000,Inf))),
-             size = 3) +
+             size = 2) +
   scale_color_manual(name = "Total Sequences",
                      values = c(
                        "(-Inf,1e+07]" = "#56B1F7",
@@ -184,7 +184,7 @@ q4 <- ggplot(data = PercMethyl, aes(x = TotalSequences, y = meth.Bismark.residua
                        "(2e+07, Inf]" = "#132B43"),
                      labels = c("Minimum – 10M","10M – 20M","20M – Maximum"))+
   geom_hline(yintercept = 0, linetype = "dashed", color = "black")+
-  annotate("text", x = -Inf, y = Inf, label = "D", hjust = -0.5, vjust = 1, size = 6, fontface = "bold")
+  annotate("text", x = -Inf, y = Inf, label = "B", hjust = -0.5, vjust = 1, size = 6, fontface = "bold")
 q4
 
 p5 <- ggplot(data = PercMethyl, aes(x = TotalSequences, y = mem.Bismark.residuals)) +
@@ -192,10 +192,10 @@ p5 <- ggplot(data = PercMethyl, aes(x = TotalSequences, y = mem.Bismark.residual
   theme_classic() +
   theme(text = element_text(size = 12), legend.position = "none", plot.margin = margin(t = 20, r = 10, b = 10, l = 10) )+
   stat_poly_line() +
-  geom_point(aes(color = Batch), size=3)+
+  geom_point(aes(color = Batch), size=2)+
   geom_hline(yintercept = 0, linetype = "dashed", color = "black")+
   scale_color_manual(values =c("#56B1F7","#132B43"))+
-  annotate("text", x = -Inf, y = Inf, label = "E", hjust = -0.5, vjust = 1, size = 6, fontface = "bold")+
+  annotate("text", x = -Inf, y = Inf, label = "D", hjust = -0.5, vjust = 1, size = 6, fontface = "bold")+
   ylim(-3, 3.5)
 p5
 
@@ -205,7 +205,7 @@ q5 <- ggplot(data = PercMethyl, aes(x = TotalSequences, y = mem.Bismark.residual
   theme(text = element_text(size = 12), legend.position="none")+
   #stat_poly_line() +
   geom_point(aes(colour = cut(TotalSequences, c(-Inf,10000000,20000000,Inf))),
-             size = 3) +
+             size = 2) +
   scale_color_manual(name = "Total Sequences",
                      values = c(
                        "(-Inf,1e+07]" = "#56B1F7",
@@ -213,16 +213,16 @@ q5 <- ggplot(data = PercMethyl, aes(x = TotalSequences, y = mem.Bismark.residual
                        "(2e+07, Inf]" = "#132B43"),
                      labels = c("Minimum – 10M","10M – 20M","20M – Maximum"))+
   geom_hline(yintercept = 0, linetype = "dashed", color = "black")+
-  annotate("text", x = -Inf, y = Inf, label = "E", hjust = -0.5, vjust = 1, size = 6, fontface = "bold")+
+  annotate("text", x = -Inf, y = Inf, label = "D", hjust = -0.5, vjust = 1, size = 6, fontface = "bold")+
   ylim(-3, 3.5)
 q5
 
 p6 <- ggplot(data = PercMethyl, aes(x = TotalSequences, y = mem.meth.residuals)) +
-  labs(x = "Total Sequences", y = "BWA meth vs BWA mem Residuals") +
+  labs(x = "Total Sequences", y = "Residuals") +
   theme_classic() +
   theme(text = element_text(size = 12), legend.position = "none", plot.margin = margin(t = 20, r = 10, b = 10, l = 10) )+
   stat_poly_line() +
-  geom_point(aes(color = Batch), size=3)+
+  geom_point(aes(color = Batch), size=2)+
   geom_hline(yintercept = 0, linetype = "dashed", color = "black")+
   scale_color_manual(values =c("#56B1F7","#132B43"))+
   annotate("text", x = -Inf, y = Inf, label = "F", hjust = -0.5, vjust = 1, size = 6, fontface = "bold")+
@@ -230,12 +230,12 @@ p6 <- ggplot(data = PercMethyl, aes(x = TotalSequences, y = mem.meth.residuals))
 p6
 
 q6 <- ggplot(data = PercMethyl, aes(x = TotalSequences, y = mem.meth.residuals)) +
-  labs(x = "Total Sequences", y = "BWA meth vs BWA mem Residuals") +
+  labs(x = "Total Sequences", y = "Residuals") +
   theme_classic() +
   theme(text = element_text(size = 12), legend.position = "none")+
   #stat_poly_line() +
   geom_point(aes(colour = cut(TotalSequences, c(-Inf,10000000,20000000,Inf))),
-             size = 3) +
+             size = 2) +
   scale_color_manual(name = "Total Sequences",
                      values = c(
                        "(-Inf,1e+07]" = "#56B1F7",
@@ -415,18 +415,81 @@ newdata <- data.frame(TotalSequences = seq(min(PercMethyl$TotalSequences),
                                            max(PercMethyl$TotalSequences), 
                                            length.out = 100))
 
+
+# Make the figure
+
+library(ggplot2)
+library(patchwork)
+library(grid)
+library(gridExtra)
+
+
+pdf(file = "PATH/Figure2.pdf",
+    width = 6.6, 
+    height = 7)
+
+# Modify the figure
+q1 <- ggplot(data = PercMethyl, aes(x = bwameth.mean, y = bismark.mean)) +
+  labs(x = "BWA meth (% meth)", y = "Bismark (% meth)") +
+  theme_classic() +
+  theme(text = element_text(size = 12), legend.position = "none")+
+  stat_poly_line() +
+  stat_poly_eq(use_label("eq"), label.x = 0.05, label.y = 0.85) +
+  geom_point(aes(colour = cut(TotalSequences, c(-Inf,10000000,20000000,Inf))),
+             size = 2) +
+  scale_color_manual(name = "Total Sequences",
+                     values = c(
+                       "(-Inf,1e+07]" = "#56B1F7",
+                       "(1e+07,2e+07]" = "#3670A0",
+                       "(2e+07, Inf]" = "#132B43"),
+                     labels = c("Minimum – 10M","10M – 20M","20M – Maximum"))+
+  annotate("text", x = -Inf, y = Inf, label = "A", hjust = -0.5, vjust = 1, size = 6, fontface = "bold")
+
+q2 <- ggplot(data = PercMethyl, aes(x = bwameth.mean, y = bwamem.mean)) +
+  labs(x = "BWA meth (% meth)", y = "BWA mem (% meth)") +
+  theme_classic() +
+  theme(text = element_text(size = 12), legend.position = "none")+
+  stat_poly_line() +
+  stat_poly_eq(use_label("eq"), , label.x = 0.05, label.y = 0.85)+
+  geom_point(aes(colour = cut(TotalSequences, c(-Inf,10000000,20000000,Inf))),
+             size = 2) +
+  scale_color_manual(name = "Total Sequences",
+                     values = c(
+                       "(-Inf,1e+07]" = "#56B1F7",
+                       "(1e+07,2e+07]" = "#3670A0",
+                       "(2e+07, Inf]" = "#132B43"),
+                     labels = c("Minimum – 10M","10M – 20M","20M – Maximum"))+
+  annotate("text", x = -Inf, y = Inf, label = "C", hjust = -0.5, vjust = 1, size = 6, fontface = "bold")+
+  ylim(c(90,100))
+
+q3 <- ggplot(data = PercMethyl, aes(x = bismark.mean, y = bwamem.mean)) +
+  labs(x = "Bismark (% meth)", y = "BWA mem (% meth)") +
+  theme_classic() +
+  theme(text = element_text(size = 12), legend.position = "none")+
+  stat_poly_line() +
+  stat_poly_eq(use_label("eq"), , label.x = 0.05, label.y = 0.85) +
+  geom_point(aes(colour = cut(TotalSequences, c(-Inf,10000000,20000000,Inf))),
+             size = 2) +
+  scale_color_manual(name = "Total Sequences",
+                     values = c(
+                       "(-Inf,1e+07]" = "#56B1F7",
+                       "(1e+07,2e+07]" = "#3670A0",
+                       "(2e+07, Inf]" = "#132B43"),
+                     labels = c("Minimum – 10M","10M – 20M","20M – Maximum"))+
+  annotate("text", x = -Inf, y = Inf, label = "E", hjust = -0.5, vjust = 1, size = 6, fontface = "bold")+
+  ylim(c(90,100))
+
 # Predict values using the model
 newdata$predicted <- predict(MethBisExp, newdata, type = "response")
 
-# Modify the figure
 q4 <- q4 + 
   # Add upper curve (positive residuals)
-  geom_line(data = newdata, aes(x = TotalSequences, y = predicted), 
+  geom_line(data = newdata, aes(x = TotalSequences, y = predicted),
             color = "firebrick", linetype = "solid", size = 1) +
   # Add lower curve (negative residuals)
   geom_line(data = newdata, aes(x = TotalSequences, y = -predicted), 
             color = "firebrick", linetype = "solid", size = 1) +
-  # Update the legend to include the GLM line
+  labs(x = "Total Sequences", y = "Residuals") +
   theme(legend.position = "none") +
   scale_color_manual(name = "Total Sequences",
                      values = c(
@@ -434,9 +497,6 @@ q4 <- q4 +
                        "(1e+07,2e+07]" = "#3670A0",
                        "(2e+07, Inf]" = "#132B43"),
                      labels = c("Minimum – 10M","10M – 20M","20M – Maximum"))
-
-# Display the plot
-q4
 
 # Predict GLM values using the model
 newdata$predicted <- predict(BisMemExp, newdata, type = "response")
@@ -449,17 +509,14 @@ q5 <- q5 +
   # Add lower curve (negative residuals)
   geom_line(data = newdata, aes(x = TotalSequences, y = -predicted), 
             color = "firebrick", linetype = "solid", size = 1) +
-  # Update the legend to include the GLM line
-  theme(legend.position = "none") +
+  labs(x = "Total Sequences", y = "Residuals") +
+  theme(legend.text=element_text(size=12)) +
   scale_color_manual(name = "Total Sequences",
                      values = c(
                        "(-Inf,1e+07]" = "#56B1F7",
                        "(1e+07,2e+07]" = "#3670A0",
                        "(2e+07, Inf]" = "#132B43"),
                      labels = c("Minimum – 10M","10M – 20M","20M – Maximum"))
-
-# Display the plot
-q5
 
 # Predict GLM values using the model
 newdata$predicted <- predict(MethMemExp, newdata, type = "response")
@@ -469,6 +526,7 @@ q6 <- q6 +
   # Add upper curve (positive residuals)
   geom_line(data = newdata, aes(x = TotalSequences, y = predicted), 
             color = "firebrick", linetype = "solid", size = 1) +
+  labs(x = "Total Sequences", y = "Residuals") +
   # Add lower curve (negative residuals)
   geom_line(data = newdata, aes(x = TotalSequences, y = -predicted), 
             color = "firebrick", linetype = "solid", size = 1) +
@@ -481,11 +539,9 @@ q6 <- q6 +
                        "(2e+07, Inf]" = "#132B43"),
                      labels = c("Minimum – 10M","10M – 20M","20M – Maximum"))
 
-# Display the plot
-q6
+q1 + q4 + q2 + q5 + q3 + q6 + plot_layout(ncol = 2)
 
-q1 + q2 + q3 + plot_layout(ncol = 3)
-q1 + q2 + q3 + q4 + q5 + q6 + plot_layout(ncol = 3)
+dev.off()
 
 ################# Plot median
 
