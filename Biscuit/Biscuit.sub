@@ -1,0 +1,35 @@
+# Condor submit file
+
+# container with conda environment
+container_image = biscuit.sif
+
+# Executable and arguments
+executable = Biscuit.sh
+arguments = $(fq)
+
+# List files that need to be transferred to the job. Replace $REFERENCE_GENOME with the reference file and INDEXED_REFERENCE_GENOME.tar.gz with a tarball of the reference indexed with Biscuit
+transfer_input_files = $(fq)_1_val_1.fq.gz, $(fq)_2_val_2.fq.gz, $REFERENCE_GENOME, INDEXED_REFERENCE_GENOME.tar.gz
+
+# Tell Condor to transfer output to our /results directory
+should_transfer_files = YES
+transfer_output_files = $(fq)_biscuit.bam
+
+
+Requirements = (Target.HasCHTCStaging == true)
+
++PreferredPelicanCaches = "osdf-uw-cache.svc.osg-htc.org,osdf1.chic.nrp.internet2.edu"
++PelicanReadTimeout = 5000
+
+
+# Track job info. Want a log file for all jobs together, while you want an output and error log for each job submitted. 
+log = logs/Biscuit.log
+output = logs/Biscuit_$(fq).out
+error = logs/Biscuit_$(fq).err
+
+# Resources requests
+request_cpus = 8
+request_memory = 30GB
+request_disk = 100GB
+
+# Tell HTCondor to run our jobs
+queue fq from Coral_Biscuit_samples.txt
