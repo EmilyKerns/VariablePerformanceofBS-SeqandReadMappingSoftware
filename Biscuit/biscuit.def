@@ -1,0 +1,6 @@
+Bootstrap: docker
+From: continuumio/miniconda3:latest
+
+%post
+        conda install bioconda::biscuit
+        conda install -c bioconda -c conda-forge samtools
