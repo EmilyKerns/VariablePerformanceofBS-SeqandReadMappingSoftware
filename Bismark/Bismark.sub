@@ -1,0 +1,33 @@
+# Condor submit file
+
+# container with conda environment
+container_image = bismark.sif
+
+# Executable and arguments
+executable = Bismark.sh
+arguments = $(fq)
+
+# List files that need to be transferred to the job. Replace $REFERENCE_GENOME with your reference genome and REFERENCE_Bisulfite_Genome.tar.gz with a tarball of your reference genome indexed with Bismark
+transfer_input_files = $(fq)_1_val_1.fq.gz, $(fq)_2_val_2.fq.gz, REFERENCE_Bisulfite_Genome.tar.gz, $REFERENCE_GENOME
+
+# Tell Condor to transfer output to our /results directory
+should_transfer_files = YES
+
+Requirements = (Target.HasCHTCStaging == true)
+
++PreferredPelicanCaches = "osdf-uw-cache.svc.osg-htc.org,osdf1.chic.nrp.internet2.edu"
++PelicanReadTimeout = 5000
+
+
+# Track job info. Want a log file for all jobs together, while you want an output and error log for each job submitted.
+log = logs/Bismark.log
+output = logs/Bismark_$(fq).out
+error = logs/Bismark_$(fq).err
+
+# Resources requests
+request_cpus = 8
+request_memory = 30GB
+request_disk = 100GB
+
+# Tell HTCondor to run our jobs
+queue fq from Bismark_Samples.txt
