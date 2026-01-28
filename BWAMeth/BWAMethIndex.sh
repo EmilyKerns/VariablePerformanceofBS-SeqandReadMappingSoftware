@@ -1,4 +1,4 @@
 #!/bin/bash
 
-# Use the conda environment's Python interpreter to run bwameth.py
-/PATH/bwameth.py index /PATH/stickleback_v5_assembly.fa
+# Replace $REFERENCE_GENOME with your reference genome file
+/PATH/bwameth.py index /PATH/$REFERENCE_GENOME
