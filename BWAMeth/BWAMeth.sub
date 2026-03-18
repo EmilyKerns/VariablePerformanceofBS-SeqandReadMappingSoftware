@@ -1,0 +1,36 @@
+# Condor submit file
+
+# container with conda environment
+container_image = BWAMeth.sif
+
+# Executable and arguments
+executable = BWAMeth.sh
+arguments = $(base_id)
+
+# List files that need to be transferred to the job
+transfer_input_files = $(base_id)_trimmed.fq.gz, REFERENCE_GENOME.fna, REFERENCE_GENOME.fna.bwameth.c2t.bwt, REFERENCE_GENOME.fna.bwameth.c2t.ann, REFERENCE_GENOME.fna.bwameth.c2t.sa, REFERENCE_GENOME.fna.bwameth.c2t, REFERENCE_GENOME.fna.bwameth.c2t.amb, REFERENCE_GENOME.fna.bwameth.c2t.pac
+#should_transfer_file = YES
+
+# Tell Condor to transfer output to our /results directory
+#transfer_output_files = ./BWAMETH_OUTDIR/$(fq).bam
+#transfer_output_remaps = "$(fq).bam=WGBS/$(fq).bam"
+
+
+Requirements = (Target.HasCHTCStaging == true)
+
++PreferredPelicanCaches = "osdf-uw-cache.svc.osg-htc.org,osdf1.chic.nrp.internet2.edu"
++PelicanReadTimeout = 5000
+
+
+# Track job info. Want a log file for all jobs together, while you want an output and error log for each job submitted. 
+log = logs/BWAmeth.log
+output = logs/BWAMeth_$(base_id).out
+error = logs/BWAMeth_$(base_id).err
+
+# Resources requests
+request_cpus = 9
+request_memory = 60GB
+request_disk = 80GB
+
+# Tell HTCondor to run our jobs
+queue base_id from BWAMeth_samples.txt
