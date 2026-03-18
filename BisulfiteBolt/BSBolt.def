@@ -1,0 +1,8 @@
+Bootstrap: docker
+From: continuumio/miniconda3:latest
+
+%post
+        conda config --add channels bioconda
+        conda config --add channels conda-forge
+        conda install -c cpfarrell bsbolt python=3.9
+        conda install -c conda-forge openssl=1.1.1t pysam=0.21.0 python=3.9
