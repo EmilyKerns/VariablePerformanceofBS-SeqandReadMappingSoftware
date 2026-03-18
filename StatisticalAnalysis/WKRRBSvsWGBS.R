@@ -211,7 +211,7 @@ WK_RRBS
 
 WK_WGBS + WK_RRBS + plot_layout(ncol = 1)
   
-### Technical Replicates ---------------------------------------------
+### Technical Replicates, Figure 5 ---------------------------------------------
   
   
 WK2_WGBS <- ggplot(WGBS_CG_WK_002)+
