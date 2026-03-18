@@ -855,6 +855,8 @@ head(all_dist_tss)
 
 Annots <- read_xlsx("/WGBSRRBSAnnotations.xlsx")
 
+####### Figure 6
+
 Annots_long <- Annots %>% 
   pivot_longer(cols = !c(Population, FishID, Sequencing), names_to= 'GenomicFeature', values_to= 'Percent')
 
