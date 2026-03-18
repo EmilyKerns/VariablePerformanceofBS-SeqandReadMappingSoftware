@@ -1,0 +1,27 @@
+# Condor submit file
+
+# container with conda environment
+container_image = BWAMeth.sif
+
+# Executable and arguments
+executable = BWAMeth_Index.sh
+
+# List files that need to be transferred to the job
+transfer_input_files = REFERENCE_GENOME.fna
+#should_transfer_file = YES
+
+# Tell Condor to transfer output to our /results directory
+#transfer_output_files = ./BWAMETH_OUTDIR/$(fq).fna
+#transfer_output_remaps = "$(fq).fna=WGBS/$(fq).fna"
+
+#transfer_output_remaps = "mapped_$(read_subset_file)_reads_to_genome.sam = ./data/mappedSAM/mapped_$(read_subset_file)_reads_to_genome.sam; "
+
+# Track job info. Want a log file for all jobs together, while you want an output and error log for each job submitted. Easily tracks the whole job with condo
+log = logs/BWAmethIndex.log
+output = logs/BWAMethIndex.out
+error = logs/BWAMethIndex.err
+
+# Resources requests
+request_cpus = 1
+request_memory = 10GB
+request_disk = 20GB
