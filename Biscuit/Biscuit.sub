@@ -32,4 +32,4 @@ request_memory = 30GB
 request_disk = 100GB
 
 # Tell HTCondor to run our jobs
-queue fq from Coral_Biscuit_samples.txt
+queue fq from Biscuit_samples.txt
