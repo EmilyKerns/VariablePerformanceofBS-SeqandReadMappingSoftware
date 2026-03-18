@@ -1,5 +1,7 @@
 ### Assess overlapping CpG sites between sequencing methods
 
+# Figures 5 & 6
+
 # load packages
 {
 library(methylKit)
