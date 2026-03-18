@@ -1,0 +1,34 @@
+# Condor submit file
+
+# container with conda environment
+container_image = bsbolt.sif
+
+# Executable and arguments
+executable = BSBoltIndex.sh
+#arguments = $(fq)
+
+# List files that need to be transferred to the job
+transfer_input_files = REFERENCE_GENOME
+
+# Tell Condor to transfer output to our /results directory
+should_transfer_files = YES
+transfer_output_files = BSBolt/
+#transfer_output_remaps = "$(fq).bam=WGBS/$(fq).bam"
+
+
+Requirements = (Target.HasCHTCStaging == true)
+
++PreferredPelicanCaches = "osdf-uw-cache.svc.osg-htc.org,osdf1.chic.nrp.internet2.edu"
++PelicanReadTimeout = 5000
+
+
+# Track job info. Want a log file for all jobs together, while you want an output and error log for each job submitted. 
+log = logs/BSBoltIndex.log
+output = logs/BSBoltIndex.out
+error = logs/BSBoltIndex.err
+
+# Resources requests
+request_cpus = 8
+request_memory = 30GB
+request_disk = 100GB
+request_disk = 100GB
