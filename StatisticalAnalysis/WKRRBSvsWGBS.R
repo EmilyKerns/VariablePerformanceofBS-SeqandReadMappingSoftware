@@ -464,6 +464,13 @@ WK3_RRBS + RRBS4 + WK3_WGBS + WGBS4 + plot_layout(ncol = 2)
 # Import CpG Islands based on reference genome. TaJoCGI used on the reference genome to create CpG island bed file
 CpGI_anot <- cpg_anot <- readFeatureFlank("/stickle_CGI.bed", feature.flank.name = c("CpGi", "shores"), flank=2000)
 head(CpGI_anot)
+
+# Proportion of the genome within CpG islands
+cpgi <- CpGI_anot@listData[["CpGi"]]
+cpgi_bases <- sum(IRanges::width(GenomicRanges::reduce(cpgi)))
+genome_size <- 	446.6e6
+proportion_cpgi <- cpgi_bases / genome_size
+proportion_cpgi #0.08543999
   
 # RRBS and WGBS merged sites
 WK_002_merged_CpGI <- annotateWithFeatureFlank(as(WK_002_merged_GR,"GRanges"), feature = CpGI_anot$CpGi, flank = CpGI_anot$shores, feature.name = "CpGi", flank.name = "shores")
